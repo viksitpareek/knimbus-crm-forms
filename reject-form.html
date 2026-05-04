@@ -1,243 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Closed Lost — Rejection Form</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: Arial, sans-serif;
-            background: #f0f2f5;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 0;
-            width: 100%;
-            max-width: 520px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.12);
-            overflow: hidden;
-        }
-        .header {
-            background: #1B2A4A;
-            color: white;
-            padding: 24px 30px;
-            text-align: center;
-        }
-        .header h2 {
-            font-size: 20px;
-            margin-bottom: 6px;
-        }
-        .header p {
-            font-size: 13px;
-            opacity: 0.75;
-        }
-        .body {
-            padding: 30px;
-        }
-        .deal-box {
-            background: #f8f9fb;
-            border-left: 4px solid #dc3545;
-            border-radius: 4px;
-            padding: 14px 16px;
-            margin-bottom: 24px;
-        }
-        .deal-box .label {
-            font-size: 11px;
-            text-transform: uppercase;
-            color: #888;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        .deal-box .value {
-            font-size: 15px;
-            font-weight: bold;
-            color: #1B2A4A;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 8px;
-        }
-        .form-group label span {
-            color: #dc3545;
-        }
-        textarea {
-            width: 100%;
-            height: 130px;
-            padding: 12px;
-            border: 1.5px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            resize: vertical;
-            font-family: Arial;
-            transition: border-color 0.2s;
-        }
-        textarea:focus {
-            outline: none;
-            border-color: #1B2A4A;
-        }
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .btn-reject {
-            background: #dc3545;
-            color: white;
-        }
-        .btn-reject:hover { background: #c82333; }
-        .btn-reject:disabled {
-            background: #aaa;
-            cursor: not-allowed;
-        }
-        .alert {
-            display: none;
-            padding: 16px;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 14px;
-            margin-top: 16px;
-            font-weight: bold;
-        }
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .footer {
-            text-align: center;
-            padding: 16px 30px;
-            font-size: 12px;
-            color: #999;
-            border-top: 1px solid #eee;
-        }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div class="header">
-            <h2>❌ Reject Closed Lost Request</h2>
-            <p>Please provide a reason before submitting</p>
-        </div>
+// Replace WEBHOOK with CRM function URL
+const CRM_FUNC_URL = 'https://www.zohoapis.in/crm/v7/functions/process_cl_action/actions/execute?auth_type=apikey&zapikey=1003.2b6918401a17ec3708d7f3d85b1107aa.d3458eb2d0109b768995ee54e596d3d1';
 
-        <div class="body">
-            <div class="deal-box">
-                <div class="label">Deal Name</div>
-                <div class="value" id="dealNameDisplay">Loading...</div>
-            </div>
+function submitRejection()
+{
+    const reason = document.getElementById('rejectionReason').value.trim();
 
-            <div class="form-group">
-                <label>
-                    Rejection Reason 
-                    <span>*</span>
-                </label>
-                <textarea 
-                    id="rejectionReason"
-                    placeholder="Please explain why this Closed Lost request is being rejected..."
-                ></textarea>
-            </div>
+    if(!reason)
+    {
+        alert('Please enter a rejection reason before submitting.');
+        return;
+    }
 
-            <button 
-                class="btn btn-reject" 
-                id="submitBtn"
-                onclick="submitRejection()"
-            >
-                Submit Rejection
-            </button>
+    if(!dealId)
+    {
+        alert('Deal ID is missing. Please use the link from the email.');
+        return;
+    }
 
-            <div class="alert alert-success" id="successMsg">
-                ✅ Rejection submitted successfully!<br><br>
-                The deal stage has been reverted and<br>
-                the owner has been notified.
-            </div>
+    const btn = document.getElementById('submitBtn');
+    btn.disabled    = true;
+    btn.textContent = 'Submitting...';
 
-            <div class="alert alert-error" id="errorMsg">
-                ❌ Something went wrong. Please try again<br>
-                or contact your CRM administrator.
-            </div>
-        </div>
+    const payload = JSON.stringify({
+        arguments: JSON.stringify({
+            dealId : dealId,
+            action : 'reject',
+            reason : reason
+        })
+    });
 
-        <div class="footer">
-            Knimbus CRM — Closed Lost Approval System
-        </div>
-    </div>
-
-    <script>
-        // Read URL parameters
-        const params  = new URLSearchParams(window.location.search);
-        const dealId  = params.get('dealId') || '';
-        const dealName = decodeURIComponent(params.get('dealName') || 'Unknown Deal');
-
-        // Show deal name
-        document.getElementById('dealNameDisplay').textContent = dealName;
-
-        // Webhook URL
-        const WEBHOOK = 'https://flow.zoho.in/60017418880/flow/webhook/incoming?zapikey=1001.beb7b7948ec6dbd7cbce79df03c43b2b.adb5bcc22859425c14c1abd2785311e4&isdebug=false';
-
-        function submitRejection()
-        {
-            const reason = document.getElementById('rejectionReason').value.trim();
-
-            if(!reason)
-            {
-                alert('Please enter a rejection reason before submitting.');
-                return;
-            }
-
-            if(!dealId)
-            {
-                alert('Deal ID is missing. Please use the link from the email.');
-                return;
-            }
-
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.textContent = 'Submitting...';
-
-            const payload = JSON.stringify({
-                dealId : dealId,
-                action : 'reject',
-                reason : reason
-            });
-
-            fetch(WEBHOOK, {
-                method  : 'POST',
-                headers : {'Content-Type': 'application/json'},
-                body    : payload,
-                mode    : 'no-cors'
-            })
-            .then(() => {
-                document.getElementById('successMsg').style.display = 'block';
-                document.getElementById('submitBtn').style.display = 'none';
-            })
-            .catch(error => {
-                document.getElementById('errorMsg').style.display = 'block';
-                btn.disabled = false;
-                btn.textContent = 'Submit Rejection';
-            });
-        }
-    </script>
-</body>
-</html>
+    fetch(CRM_FUNC_URL, {
+        method  : 'POST',
+        headers : { 'Content-Type': 'application/json' },
+        body    : payload,
+        mode    : 'no-cors'
+    })
+    .then(() => {
+        document.getElementById('successMsg').style.display = 'block';
+        document.getElementById('submitBtn').style.display  = 'none';
+    })
+    .catch(() => {
+        document.getElementById('errorMsg').style.display = 'block';
+        btn.disabled    = false;
+        btn.textContent = 'Submit Rejection';
+    });
+}
