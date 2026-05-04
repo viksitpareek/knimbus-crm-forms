@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Approving...</title>
+    <style>
+        body { font-family: Arial; display: flex; justify-content: center;
+               align-items: center; min-height: 100vh; margin: 0;
+               background: #f0f4f8; }
+        .card { background: white; border-radius: 12px; padding: 40px;
+                max-width: 480px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                text-align: center; }
+        .icon { font-size: 60px; margin-bottom: 20px; }
+        h2 { color: #1B2A4A; margin-bottom: 10px; }
+        p  { color: #666; font-size: 14px; }
+        .btn { background: #28a745; color: white; border: none;
+               padding: 14px 40px; border-radius: 8px; font-size: 15px;
+               font-weight: bold; cursor: pointer; margin-top: 20px; }
+        .btn:disabled { background: #aaa; cursor: not-allowed; }
+        .success { color: green; font-weight: bold; margin-top: 20px;
+                   display: none; }
+        .error   { color: red; margin-top: 20px; display: none; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="icon">✅</div>
+    <h2>Approve Closed Lost</h2>
+    <p id="dealInfo">Loading deal details...</p>
+    <button class="btn" id="confirmBtn" onclick="confirmApprove()">
+        Confirm Approval
+    </button>
+    <div class="success" id="successMsg">
+        ✅ Deal approved successfully!<br>
+        The deal owner has been notified.
+    </div>
+    <div class="error" id="errorMsg">
+        ❌ Something went wrong. Please try again.
+    </div>
+</div>
+
+<script>
+    const params   = new URLSearchParams(window.location.search);
+    const dealId   = params.get('dealId')   || '';
+    const dealName = decodeURIComponent(params.get('dealName') || 'this deal');
+
+    document.getElementById('dealInfo').textContent =
+        'Deal: ' + dealName;
+
+    // Zoho CRM Function URL — paste your function API URL here
+    const CRM_FUNC_URL = 'https://www.zohoapis.com/crm/v2/functions/process_cl_action/actions/execute?auth_type=apikey&zapikey=YOUR_FUNCTION_API_KEY';
+
+    function confirmApprove()
+    {
+        const btn = document.getElementById('confirmBtn');
+        btn.disabled    = true;
+        btn.textContent = 'Approving...';
+
+        const payload = JSON.stringify({
+            arguments: JSON.stringify({
+                dealId : dealId,
+                action : 'approve',
+                reason : ''
+            })
+        });
+
+        fetch(CRM_FUNC_URL, {
+            method  : 'POST',
+            headers : { 'Content-Type': 'application/json' },
+            body    : payload,
+            mode    : 'no-cors'
+        })
+        .then(() => {
+            document.getElementById('successMsg').style.display = 'block';
+            btn.style.display = 'none';
+        })
+        .catch(() => {
+            document.getElementById('errorMsg').style.display = 'block';
+            btn.disabled    = false;
+            btn.textContent = 'Confirm Approval';
+        });
+    }
+</script>
+</body>
+</html>
