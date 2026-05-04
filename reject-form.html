@@ -216,18 +216,15 @@
             btn.disabled = true;
             btn.textContent = 'Submitting...';
 
-            const payload = JSON.stringify({
-                dealId : dealId,
-                action : 'reject',
-                reason : reason
-            });
+            const formData = new URLSearchParams();
+formData.append('dealId', dealId);
+formData.append('action', 'reject');
+formData.append('reason', reason);
 
-            fetch(WEBHOOK, {
-                method  : 'POST',
-                headers : {'Content-Type': 'application/json'},
-                body    : payload,
-                mode    : 'no-cors'
-            })
+fetch(WEBHOOK, {
+    method: 'POST',
+    body: formData
+})
             .then(() => {
                 document.getElementById('successMsg').style.display = 'block';
                 document.getElementById('submitBtn').style.display = 'none';
