@@ -1,84 +1,150 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Approving...</title>
-    <style>
-        body { font-family: Arial; display: flex; justify-content: center;
-               align-items: center; min-height: 100vh; margin: 0;
-               background: #f0f4f8; }
-        .card { background: white; border-radius: 12px; padding: 40px;
-                max-width: 480px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-                text-align: center; }
-        .icon { font-size: 60px; margin-bottom: 20px; }
-        h2 { color: #1B2A4A; margin-bottom: 10px; }
-        p  { color: #666; font-size: 14px; }
-        .btn { background: #28a745; color: white; border: none;
-               padding: 14px 40px; border-radius: 8px; font-size: 15px;
-               font-weight: bold; cursor: pointer; margin-top: 20px; }
-        .btn:disabled { background: #aaa; cursor: not-allowed; }
-        .success { color: green; font-weight: bold; margin-top: 20px;
-                   display: none; }
-        .error   { color: red; margin-top: 20px; display: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approve Closed Lost</title>
+
+<style>
+    body {
+        font-family: Arial;
+        background: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    .card {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        width: 400px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+        margin-bottom: 10px;
+    }
+
+    .deal {
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #1B2A4A;
+    }
+
+    button {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    button:disabled {
+        background: #aaa;
+        cursor: not-allowed;
+    }
+
+    /* Loader */
+    .loader {
+        display: none;
+        margin-top: 20px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #28a745;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    @keyframes spin {
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Success */
+    .success {
+        display: none;
+        margin-top: 20px;
+        color: green;
+        font-weight: bold;
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from {opacity: 0;}
+        to {opacity: 1;}
+    }
+
+</style>
 </head>
+
 <body>
+
 <div class="card">
-    <div class="icon">✅</div>
-    <h2>Approve Closed Lost</h2>
-    <p id="dealInfo">Loading deal details...</p>
-    <button class="btn" id="confirmBtn" onclick="confirmApprove()">
-        Confirm Approval
-    </button>
+    <h2>✅ Approve Closed Lost</h2>
+
+    <div class="deal" id="dealName">Loading...</div>
+
+    <button id="approveBtn" onclick="approveDeal()">Confirm Approval</button>
+
+    <div class="loader" id="loader"></div>
+
     <div class="success" id="successMsg">
-        ✅ Deal approved successfully!<br>
-        The deal owner has been notified.
-    </div>
-    <div class="error" id="errorMsg">
-        ❌ Something went wrong. Please try again.
+        🎉 Approved successfully!<br><br>
+        Deal marked as Closed Lost.
     </div>
 </div>
 
 <script>
-    const params   = new URLSearchParams(window.location.search);
-    const dealId   = params.get('dealId')   || '';
-    const dealName = decodeURIComponent(params.get('dealName') || 'this deal');
+    const params = new URLSearchParams(window.location.search);
+    const dealId = params.get('dealId') || '';
+    const dealName = decodeURIComponent(params.get('dealName') || 'Unknown Deal');
 
-    document.getElementById('dealInfo').textContent =
-        'Deal: ' + dealName;
+    document.getElementById('dealName').textContent = dealName;
 
-    // Zoho CRM Function URL — paste your function API URL here
-    const CRM_FUNC_URL = 'https://www.zohoapis.com/crm/v2/functions/process_cl_action/actions/execute?auth_type=apikey&zapikey=YOUR_FUNCTION_API_KEY';
+    const WEBHOOK = "https://flow.zoho.in/60017418880/flow/webhook/incoming?zapikey=1001.beb7b7948ec6dbd7cbce79df03c43b2b.adb5bcc22859425c14c1abd2785311e4";
 
-    function confirmApprove()
+    function approveDeal()
     {
-        const btn = document.getElementById('confirmBtn');
-        btn.disabled    = true;
-        btn.textContent = 'Approving...';
+        if(!dealId)
+        {
+            alert("Missing Deal ID");
+            return;
+        }
 
-        const payload = JSON.stringify({
-            arguments: JSON.stringify({
-                dealId : dealId,
-                action : 'approve',
-                reason : ''
-            })
-        });
+        const btn = document.getElementById("approveBtn");
+        const loader = document.getElementById("loader");
 
-        fetch(CRM_FUNC_URL, {
-            method  : 'POST',
-            headers : { 'Content-Type': 'application/json' },
-            body    : payload,
-            mode    : 'no-cors'
+        btn.disabled = true;
+        loader.style.display = "block";
+
+        const formData = new URLSearchParams();
+        formData.append("dealId", dealId);
+        formData.append("action", "approve");
+        formData.append("reason", "Approved");
+
+        fetch(WEBHOOK, {
+            method: "POST",
+            body: formData
         })
         .then(() => {
-            document.getElementById('successMsg').style.display = 'block';
-            btn.style.display = 'none';
+            loader.style.display = "none";
+            document.getElementById("successMsg").style.display = "block";
+            btn.style.display = "none";
         })
         .catch(() => {
-            document.getElementById('errorMsg').style.display = 'block';
-            btn.disabled    = false;
-            btn.textContent = 'Confirm Approval';
+            loader.style.display = "none";
+            btn.disabled = false;
+            alert("Something went wrong. Please try again.");
         });
     }
 </script>
+
 </body>
 </html>
